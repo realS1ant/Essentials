@@ -420,6 +420,10 @@ commands:
     description: Show contents of a kit.
     usage: /<command> <kitname>
     aliases: [kitpreview,preview,kitshow]
+  editkit:
+    description: Edit it kit within a GUI.
+    usage: /<command> <kitname>
+    aliases: [eeditkit, kitedit]
   editsign:
     description: Edits a sign in the world.
     usage: /<command> <set/clear> <line number> [text]

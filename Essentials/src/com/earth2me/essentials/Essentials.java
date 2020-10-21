@@ -413,6 +413,9 @@ public class Essentials extends JavaPlugin implements net.ess3.api.IEssentials {
         final EssentialsServerListener serverListener = new EssentialsServerListener(this);
         pm.registerEvents(serverListener, this);
 
+        final EditKitInventoryListener editKitListener = new EditKitInventoryListener(this);
+        pm.registerEvents(editKitListener, this);
+
         pm.registerEvents(tntListener, this);
 
         if (recipeBookEventProvider != null) {
