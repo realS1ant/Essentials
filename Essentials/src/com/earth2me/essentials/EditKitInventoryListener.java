@@ -6,10 +6,7 @@ import com.google.common.io.CharStreams;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import net.ess3.api.IEssentials;
-import org.bukkit.ChatColor;
 import org.bukkit.Material;
-import org.bukkit.configuration.ConfigurationSection;
-import org.bukkit.configuration.MemoryConfiguration;
 import org.bukkit.configuration.file.YamlConstructor;
 import org.bukkit.configuration.file.YamlRepresenter;
 import org.bukkit.event.EventHandler;
@@ -18,7 +15,6 @@ import org.bukkit.event.inventory.InventoryClickEvent;
 import org.bukkit.event.inventory.InventoryInteractEvent;
 import org.bukkit.inventory.ItemStack;
 import org.yaml.snakeyaml.DumperOptions;
-import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.representer.Representer;
 
 import java.io.InputStreamReader;
@@ -26,8 +22,6 @@ import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -50,10 +44,51 @@ public class EditKitInventoryListener implements Listener {
 
     @EventHandler
     public void onInventoryClickEvent(final InventoryClickEvent event) {
-        if(event.getClickedInventory() == null) {
+        if(event.getClickedInventory() == null || !ess.getKits().getKitEditGUIS().contains(event.getClickedInventory())) {
             return;
         }
-        if (event.getView().getTitle().startsWith(ChatColor.GREEN + "" + ChatColor.BOLD + "Editing Kit " +
+
+        if(event.getSlot() >= 45 && !(event.getSlot() == 48 ||event.getSlot() == 50)){
+            event.setCancelled(true);
+            return;
+        }
+        final String kitName = event.getView().getTitle().replace(tl("editkitGUITitle").replace("{0}", ""), "");
+        final long delay = (int) ess.getKits().getKit(kitName).get("delay");
+        final User user = ess.getUser(event.getWhoClicked().getUniqueId());
+        if(event.getSlot() == 50) {
+            //Cancelled editing!
+            ess.getKits().removeKitEditGUI(event.getClickedInventory());
+            event.getWhoClicked().closeInventory();
+            event.getWhoClicked().sendMessage(tl("cancelKitEdit"));
+            return;
+        } else if(event.getSlot() != 48) return;
+        event.setCancelled(true);
+        //Save kit here
+
+        final ArrayList<ItemStack> contents = new ArrayList<>();
+        final ItemStack[] invItems = event.getClickedInventory().getStorageContents();
+        for(ItemStack item : invItems) {
+            if(item != null) {
+                if(item.getType() == Material.AIR) break;
+                if(item.hasItemMeta() && item.getItemMeta() != null) {
+                    final String itemName = item.getItemMeta().getDisplayName();
+                    if(itemName == null) {
+                        contents.add(item);
+                    } else if(!((itemName.equalsIgnoreCase(tl("kitEditSpacerItemName", kitName)))
+                            || (itemName.equalsIgnoreCase(tl("confirmKitEditItemName", kitName)))
+                            || (itemName.equalsIgnoreCase(tl("cancelKitEditItemName", kitName))))) {
+                        contents.add(item);
+                    }
+                } else {
+                    contents.add(item);
+                }
+            }
+        }
+        //Working up to this point!
+
+
+
+        /*if (event.getView().getTitle().startsWith(ChatColor.GREEN + "" + ChatColor.BOLD + "Editing Kit " +
                 ChatColor.DARK_AQUA + "" + ChatColor.BOLD) && Objects.requireNonNull(event.getClickedInventory()).getHolder() == null) {
             final String kitName = event.getView().getTitle().replace(ChatColor.GREEN + "" + ChatColor.BOLD + "Editing Kit " +
                     ChatColor.DARK_AQUA + "" + ChatColor.BOLD, "");
@@ -64,11 +99,24 @@ public class EditKitInventoryListener implements Listener {
                 if(event.getSlot() == 48) {
 
                     final ArrayList<ItemStack> contents = new ArrayList<>();
+                    System.out.println(Arrays.toString(event.getClickedInventory().getStorageContents()));
                     for(ItemStack item : event.getClickedInventory().getStorageContents()) {
-                        if(item == null) {
-                            break;
+                        if(item != null) {
+                            if(item.hasItemMeta() && item.getItemMeta() != null) {
+                                final String itemName = item.getItemMeta().getDisplayName();
+                                if(!((itemName.equalsIgnoreCase(tl("kitEditSpacerItemName", kitName)))
+                                        || (itemName.equalsIgnoreCase(tl("confirmKitEditItemName", kitName)))
+                                        || (itemName.equalsIgnoreCase("cancelKitEditItemName", kitName)))) {
+
+                                    contents.add(item);
+                                }
+                            } else {
+                                contents.add(item);
+                            }
                         }
-                        if(item.getItemMeta() == null) {
+
+                        /*if(item.getItemMeta() == null) {
+                            //System.out.println("item.getitemmeta: " + item.getItemMeta());
                             contents.add(item);
                             break;
                         }
@@ -78,27 +126,30 @@ public class EditKitInventoryListener implements Listener {
                             break;
                         }
 
-                        System.out.println(tl("kitEditSpacerItemName", kitName) + tl("confirmKitEditItemName") + tl("cancelKitEditItemName"));
-
                         if(!((itemName.equalsIgnoreCase(tl("kitEditSpacerItemName", kitName)))
                                 || (itemName.equalsIgnoreCase(tl("confirmKitEditItemName")))
                                 || (itemName.equalsIgnoreCase("cancelKitEditItemName")))) {
+                            //System.out.println("contents: " + item);
                             contents.add(item);
                         }
+
+                        //System.out.println("leftover item: " + item);
                     }
+
+                    System.out.println("\n\n\n\n\n"+contents);
                     ess.getKits().removeKit(kitName);
                     //ess.getKits().addKit(kitName, (List<String>) kit.get("items"), (int) kit.get("delay"));
 
                     final List<String> list = new ArrayList<>();
                     for (final ItemStack is : contents) {
-                        if (is != null && is.getType() != null && is.getType() != Material.AIR) {
+                        if (is != null && is.getType() != Material.AIR) {
                             final String serialized = ess.getItemDb().serialize(is);
                             list.add(serialized);
                         }
                     }
                     // Some users might want to directly write to config knowing the consequences. *shrug*
                     if (!ess.getSettings().isPastebinCreateKit()) {
-                        System.out.println("kitname: " + kitName + "\nlist: " + list + "\ndelay: " + delay);
+                        System.out.println("\n\n\nkitname: " + kitName + "\nlist: " + list + "\ndelay: " + delay + "\n\n");
                         ess.getKits().addKit(kitName, list, delay);
                         event.getWhoClicked().sendMessage(tl("updateKit", kitName));
                         event.getWhoClicked().closeInventory();
@@ -122,7 +173,7 @@ public class EditKitInventoryListener implements Listener {
                 }
 
             }
-        }
+        }*/
     }
 
     @EventHandler

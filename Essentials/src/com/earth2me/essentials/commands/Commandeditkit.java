@@ -42,15 +42,17 @@ public class Commandeditkit extends EssentialsCommand{
             if (sender.getPlayer() != null) {
                 kit.checkPerms(ess.getUser(sender.getPlayer()));
             }
+            if(sender.getPlayer() == null) {
+                sender.sendMessage(ChatColor.RED + "You're not a player!");
+                return;
+            }
 
-            sender.sendMessage("editing kit here!!");
             sender.getPlayer().openInventory(getKitInventory(kit, sender));
         }
     }
 
     public Inventory getKitInventory(Kit kit, CommandSource user) {
-        final Inventory inv = Bukkit.getServer().createInventory(null, 54, ChatColor.GREEN + "" +
-                ChatColor.BOLD + "Editing Kit " + ChatColor.DARK_AQUA + "" + ChatColor.BOLD + kit.getName());
+        final Inventory inv = Bukkit.getServer().createInventory(null, 54, tl("editkitGUITitle", kit.getName()));
 
         ItemStack spacerItem;
         try {
@@ -59,6 +61,9 @@ public class Commandeditkit extends EssentialsCommand{
             spacerItem = new ItemStack(Material.getMaterial("STAINED_GLASS_PANE"), 1);
             spacerItem.setDurability((short)2);
         }
+        final ItemMeta spacerItemMeta = spacerItem.getItemMeta();
+        spacerItemMeta.setDisplayName(tl("kitEditSpacerItemName", kit.getName()));
+        spacerItem.setItemMeta(spacerItemMeta);
 
         ItemStack cancelItem;
         try {
@@ -68,7 +73,7 @@ public class Commandeditkit extends EssentialsCommand{
             cancelItem.setDurability((short)14);
         }
         final ItemMeta cancelItemMeta = cancelItem.getItemMeta();
-        cancelItemMeta.setDisplayName(ChatColor.GREEN + "" + ChatColor.BOLD + "Stop Editing");
+        cancelItemMeta.setDisplayName(tl("cancelKitEditItemName", kit.getName()));
         cancelItem.setItemMeta(cancelItemMeta);
 
         ItemStack confirmItem;
@@ -79,7 +84,7 @@ public class Commandeditkit extends EssentialsCommand{
             confirmItem.setDurability((short)5);
         }
         final ItemMeta confirmItemMeta = confirmItem.getItemMeta();
-        confirmItemMeta.setDisplayName(ChatColor.GREEN + "" + ChatColor.BOLD + "Save Kit");
+        confirmItemMeta.setDisplayName(tl("confirmKitEditItemName", kit.getName()));
         confirmItem.setItemMeta(confirmItemMeta);
 
         /*inv.setItem(0, spacerItem);
@@ -124,7 +129,7 @@ public class Commandeditkit extends EssentialsCommand{
         } catch (Exception e) {
             e.printStackTrace();
         }
-
+        ess.getKits().addKitEditGUI(inv);
         return inv;
     }
 

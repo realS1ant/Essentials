@@ -3,9 +3,11 @@ package com.earth2me.essentials;
 import com.earth2me.essentials.utils.NumberUtil;
 import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.configuration.MemoryConfiguration;
+import org.bukkit.inventory.Inventory;
 
 import java.io.File;
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -17,6 +19,7 @@ public class Kits implements IConf {
 
     private final EssentialsConf config;
     private ConfigurationSection kits;
+    private ArrayList<Inventory> kitEditGUIS = new ArrayList<>();
 
     public Kits(final IEssentials essentials) {
         config = new EssentialsConf(new File(essentials.getDataFolder(), "kits.yml"));
@@ -130,5 +133,17 @@ public class Kits implements IConf {
             throw new Exception(tl("kitError"), ex);
         }
 
+    }
+
+    public void addKitEditGUI(Inventory i) {
+        kitEditGUIS.add(i);
+    }
+
+    public void removeKitEditGUI(Inventory i){
+        kitEditGUIS.remove(i);
+    }
+
+    public ArrayList<Inventory> getKitEditGUIS() {
+        return kitEditGUIS;
     }
 }
